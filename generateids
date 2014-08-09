@@ -1,0 +1,167 @@
+#!/usr/bin/python
+import sys
+import os
+import stat
+import subprocess
+import time
+import crypto
+import config
+import identity
+
+tarexec="/bin/tar"
+gpgexec="/usr/bin/gpg"
+
+def ensuredir(di):
+   if not (os.path.exists(di)):
+      os.makedirs(di)
+
+def write_priv(f,k,c):
+   f.write("idmas priv "+crypto.inttobase58(k)+" "+crypto.inttobase58(c))
+
+def write_pub(f,K,c):
+   (xK,yK) = K
+   f.write("idmas pub "+crypto.inttobase58(xK)+" "+crypto.inttobase58(yK)+" "+crypto.inttobase58(c))
+
+def createsavescript(fdi,di,sd,pw):
+   fn=fdi+"/"+di+"/save"
+   f=open(fn,'w')
+   f.write('#!/bin/bash\nDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"\ncd $DIR/..\n')
+   f.write('mv '+di+'.tgz.gpg '+di+'.tgz.gpg`date +%Y%m%d%H%M%S`\n')
+   f.write('tar czvf '+di+'.tgz '+di+'\n')
+   f.write("echo '"+pw+"' | gpg --passphrase-fd 0 -c "+di+".tgz\n")
+   f.write('cp '+di+'.tgz.gpg* '+sd+'/\n')
+   f.close()
+   st = os.stat(fn)
+   os.chmod(fn, st.st_mode | stat.S_IEXEC)
+
+createdir=None
+savedir=None
+epath=None
+
+def generatereal(b,d,k,c,idpathname):
+   global createdir, savedir, epath
+   if d > 0:
+      j = 1
+      for i in range(b):
+         (kj,cj) = crypto.ckdpriv(k,c,crypto.harden(j))
+         (kji,cji) = crypto.ckdpriv(kj,cj,crypto.harden(0))
+         (kid,cid) = crypto.ckdpriv(kji,cji,crypto.harden(0)) # Used for id info
+         gid=None
+         if idpathname==None:
+            gid=str(j)
+         else:
+            gid=idpathname+"."+str(j)
+         (gmale,nat,bday,age,fname,mname,lname)=identity.getidentity(kid,cid)
+         ensuredir(createdir+"/"+gid+"hot")
+         ensuredir(createdir+"/"+gid+"warm")
+         (kcold,ccold) = crypto.ckdpriv(kji,cji,crypto.harden(1))
+         Kcold = crypto.point(kcold)
+         (kwarm,cwarm) = crypto.ckdpriv(kji,cji,crypto.harden(2))
+         (kwarmpass,cwarmpass) = crypto.ckdpriv(kwarm,cwarm,crypto.harden(0))
+         (kwarmpass0,cwarmpass0) = crypto.ckdpriv(kwarmpass,cwarmpass,0)
+         warmpass0 = crypto.inttobase58(kwarmpass0 >> (256-87))
+         Kwarm = crypto.point(kwarm)
+         (khot,chot) = crypto.ckdpriv(kji,cji,crypto.harden(3))
+         (khotpass,chotpass) = crypto.ckdpriv(khot,chot,crypto.harden(0))
+         (khotpass0,chotpass0) = crypto.ckdpriv(khotpass,chotpass,0)
+         hotpass0 = crypto.inttobase58(khotpass0 >> (256-87))
+         Khot = crypto.point(khot)
+         createsavescript(createdir,gid+"hot",savedir,hotpass0)
+         f = open(createdir+"/"+gid+"hot/info.txt",'w')
+         f.write(gid+" "+fname+" "+mname+" "+lname)
+         if gmale:
+            f.write(" (Male, "+nat+")\n")
+         else:
+            f.write(" (Female, "+nat+")\n")
+         f.write("Born "+time.strftime("%B %d, %Y",bday)+" ("+str(age)+")\n")
+         f.write("\nhot:\n")
+         write_priv(f,khot,chot)
+         f.write("\n")
+         write_pub(f,Khot,chot)
+         f.write("\n\nwarm:\n")
+         write_pub(f,Kwarm,cwarm)
+         f.write("\n\ndirectory pass: "+hotpass0+"\n\n* To save work later call the script 'save'.\nIt will be encrypted with the directory pass.\n\n")
+         f.write("* To create passwords:\n")
+         write_priv(f,khot,chot)
+         f.write(" passwords 0 5\n\n")
+         f.write("* To create bitcoin hot keys and addresses:\n")
+         write_priv(f,khot,chot)
+         f.write(" btc 0 5\n\n")
+         f.write("* To create bitcoin warm addresses:\n")
+         write_pub(f,Kwarm,cwarm)
+         f.write(" btc 0 5\n\n")
+         f.close()
+         createsavescript(createdir,gid+"warm",savedir,warmpass0)
+         f = open(createdir+"/"+gid+"warm/info.txt",'w')
+         f.write(gid+" "+fname+" "+mname+" "+lname)
+         if gmale:
+            f.write(" (Male, "+nat+")\n")
+         else:
+            f.write(" (Female, "+nat+")\n")
+         f.write("Born "+time.strftime("%B %d, %Y",bday)+" ("+str(age)+")\n")
+         f.write("\nhot:\n")
+         write_priv(f,khot,chot)
+         f.write("\n")
+         write_priv(f,kwarm,cwarm)
+         f.write("\n\nwarm:\n")
+         write_pub(f,Kwarm,cwarm)
+         f.write("\n\ndirectory pass: "+warmpass0+"\n\n* To save work later call the script 'save'.\nIt will be encrypted with the directory pass.\n\n")
+         f.write("* To create passwords:\n")
+         write_priv(f,kwarm,cwarm)
+         f.write(" passwords 0 5\n\n")
+         f.write("* To create bitcoin hot keys and addresses:\n")
+         write_priv(f,khot,chot)
+         f.write(" btc 0 5\n\n")
+         f.write("* To create bitcoin warm keys and addresses:\n")
+         write_priv(f,kwarm,cwarm)
+         f.write(" btc 0 5\n\n")
+         f.write("* To create bitcoin cold addresses:\n")
+         write_pub(f,Kcold,ccold)
+         f.write(" btc 0 5\n\n")
+         f.close()
+         print epath+"/initenc"+" "+createdir+" "+gid+"hot"+" "+hotpass0
+         subprocess.call([epath+"/initenc",createdir,gid+"hot",hotpass0])
+         subprocess.call([epath+"/initenc",createdir,gid+"warm",warmpass0])
+         generatereal(b,d-1,kj,cj,gid)
+         j=j+1
+
+def generate(b,d,k,c,idpathname):
+   global createdir,epath
+   ensuredir(createdir)
+   epath=os.path.dirname(os.path.realpath(sys.argv[0]))
+   print epath
+   generatereal(b,d,k,c,idpathname)
+
+def command_range(nxtarg,def1=0,def2=10):
+   if len(sys.argv) > nxtarg:
+      j = int(sys.argv[nxtarg])
+      if len(sys.argv) > nxtarg+1:
+         l = int(sys.argv[nxtarg+1])
+         return (j,l)
+      else:
+         return (j,def2)
+   else:
+      return (def1,def2)
+
+# main
+def main():
+   if len(sys.argv)<4:
+      print "Usage: generateids <MasterSecretString> <DirectoryForCreationNow> <DirectoryForSavingLater> [breadth [depth]]"
+   else:
+      global createdir, savedir
+      (krs,crs) = crypto.master(sys.argv[1])
+      kr = crypto.parse256(krs)
+      cr = crypto.parse256(crs)
+      (b,d) = command_range(4,2,2)
+      createdir=sys.argv[2]
+      savedir=sys.argv[3]
+      generate(b,d,kr,cr,None)
+
+try:
+   main()
+except ValueError as e:
+   print "Error: ",e
+   sys.exit(1)
+except:
+   print "Error: ",sys.exc_info()[0]
+   sys.exit(2)

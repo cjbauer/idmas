@@ -1,0 +1,197 @@
+#!/usr/bin/python
+import sys
+import time
+import crypto
+import config
+import identity
+
+# structure
+# ID/0' is where the identity information is obtained
+# other hardened subdirs of ID are DIR nodes ("directories": cold, warm, hot)
+# DIR/passwords_ppath/ passwords
+# DIR/[coin]_ppath/ key/address pairs for coin
+passwords_ppath = crypto.parsepath("0'")
+btc_ppath = crypto.parsepath("0/0/0")
+ltc_ppath = crypto.parsepath("0/1/0")
+drk_ppath = crypto.parsepath("0/2/0")
+
+# nostruct is an indication not to use ppaths above
+def clear_ppaths():
+   global passwords_ppath, btc_ppath, ltc_ppath, drk_ppath
+   passwords_ppath = []
+   btc_ppath = []
+   ltc_ppath = []
+   drk_ppath = []
+
+def print_help():
+   print "Basic Usage:"
+   print 'idmas priv PrivateRootInBase58 ChaincodeRootInBase58 [command]'
+   print 'idmas pub PublicRootInBase58x PublicRootInBase58y ChaincodeRootInBase58 [command]'
+   print "Offline Usage:"
+   print 'idmas master "your secret string that should never touch online" <path> identity'
+   print "Advanced Usage:"
+   print 'idmas priv PrivateRootInBase58 ChaincodeRootInBase58 [path]'
+   print 'idmas pub PublicRootInBase58x PublicRootInBase58y ChaincodeRootInBase58 [path]'
+   print 'idmas priv PrivateRootInBase58 ChaincodeRootInBase58 nostruct [command]'
+   print 'idmas pub PublicRootInBase58x PublicRootInBase58y ChaincodeRootInBase58 nostruct [command]'
+   print 'If the path is omitted, the root node is used.'
+   print 'Commands are:'
+   print 'btc -- print the extended private and/or addresses for the bitcoin node of the directory (or node itself if nostruct)'
+   print 'ltc -- print the extended private and/or addresses for the litecoin node of the directory (or node itself if nostruct)'
+   print 'drk -- print the extended private and/or addresses for the darkcoin node of the directory (or node itself if nostruct)'
+   print 'passwords [StartIndex [NumberToGenerate]] -- generate passwords by taking 96 bits from the private keys and giving them in base58'
+   print 'identity -- give name, age, and so on for the identity at this node'
+
+def command_range(nxtarg,def1=0,def2=10):
+   if len(sys.argv) > nxtarg:
+      j = int(sys.argv[nxtarg])
+      if len(sys.argv) > nxtarg+1:
+         l = int(sys.argv[nxtarg+1])
+         return (j,l)
+      else:
+         return (j,def2)
+   else:
+      return (def1,def2)
+
+def coin_addresses(j,l,wf,af,k,K,c):
+   e = j+l
+   if k == None:
+      while j < e:
+         (Kj,_) = crypto.ckdpub(K,c,j)
+         print af(Kj)
+         j=j+1
+   else:
+      while j < e:
+         (kj,_) = crypto.ckdpriv(k,c,j)
+         print wf(kj)
+         print af(crypto.point(kj))
+         j=j+1
+
+def handle_command(com,nxtarg,k,K,c):
+   if com=="btc":
+      if len(sys.argv) == nxtarg:
+         (k,K,c) = crypto.postpath(btc_ppath,k,K,c)
+         crypto.print_node_info(k,K,c)
+      else:
+         (j,l) = command_range(nxtarg)
+         (k,K,c) = crypto.postpath(btc_ppath,k,K,c)
+         coin_addresses(j,l,crypto.btcwif,crypto.btcaddr,k,K,c)
+   elif com=="ltc":
+      if len(sys.argv) == nxtarg:
+         (k,K,c) = crypto.postpath(ltc_ppath,k,K,c)
+         crypto.print_node_info(k,K,c)
+      else:
+         (j,l) = command_range(nxtarg)
+         (k,K,c) = crypto.postpath(ltc_ppath,k,K,c)
+         coin_addresses(j,l,crypto.ltcwif,crypto.ltcaddr,k,K,c)
+   elif com=="drk":
+      if len(sys.argv) == nxtarg:
+         (k,K,c) = crypto.postpath(drk_ppath,k,K,c)
+         crypto.print_node_info(k,K,c)
+      else:
+         (j,l) = command_range(nxtarg)
+         (k,K,c) = crypto.postpath(drk_ppath,k,K,c)
+         coin_addresses(j,l,crypto.drkwif,crypto.drkaddr,k,K,c)
+   elif com=="passwords":
+      if k == None:
+         raise ValueError("passwords can only be created with the extended private key")
+      else:
+         (k,K,c) = crypto.postpath(passwords_ppath,k,K,c)
+         (j,l) = command_range(nxtarg)
+         e = j+l
+         while j < e:
+            (kj,_) = crypto.ckdpriv(k,c,j)
+            print crypto.inttobase58(kj >> (256-87)) # use the first 87 bits to determine the password
+            j=j+1
+   elif com=="identity":
+      if k == None:
+         raise ValueError("identity requires the extended private key")
+      else:
+         (ki,ci) = crypto.ckdpriv(k,c,crypto.harden(0)) # assume called with SUPERID node, so this gives the ID node
+         (ki0,ci0) = crypto.ckdpriv(ki,ci,crypto.harden(0)) # the 0' subnode of ID is used to determine identity information
+         identity.reportidentity(ki0,ci0)
+         (kcold,ccold) = crypto.ckdpriv(ki,ci,crypto.harden(1))
+         print "* Cold:"
+         crypto.print_node_info(kcold,crypto.point(kcold),ccold)
+         (kwarm,cwarm) = crypto.ckdpriv(ki,ci,crypto.harden(2))
+         (kwarmpass,cwarmpass) = crypto.ckdpriv(kwarm,cwarm,crypto.harden(0))
+         (kwarmpass0,cwarmpass0) = crypto.ckdpriv(kwarmpass,cwarmpass,0)
+         warmpass0 = crypto.inttobase58(kwarmpass0 >> (256-87))
+         print "* Warm:"
+         print "Pass: "+warmpass0
+         crypto.print_node_info(kwarm,crypto.point(kwarm),cwarm)
+         (khot,chot) = crypto.ckdpriv(ki,ci,crypto.harden(3))
+         (khotpass,chotpass) = crypto.ckdpriv(khot,chot,crypto.harden(0))
+         (khotpass0,chotpass0) = crypto.ckdpriv(khotpass,chotpass,0)
+         hotpass0 = crypto.inttobase58(khotpass0 >> (256-87))
+         print "* Hot:"
+         print "Pass: "+hotpass0
+         crypto.print_node_info(khot,crypto.point(khot),chot)
+   else:
+      print "Unknown command "+com
+
+def commandp(x):
+   return (x=="btc" or x=="ltc" or x=="drk" or x=="passwords" or x=="identity")
+
+# main
+def main():
+   if len(sys.argv)==1:
+      print_help()
+   elif len(sys.argv)==2:
+      if sys.argv[1]=='help':
+         print_help()
+      else:
+         print "Unknown command line argument "+sys.argv[1]
+   elif len(sys.argv)>2:
+      cr = None
+      kr = None
+      Kr = None
+      nxtarg=3
+      if sys.argv[1]=='master':
+         (krs,crs) = crypto.master(sys.argv[2])
+         kr = crypto.parse256(krs)
+         cr = crypto.parse256(crs)
+         Kr = crypto.point(kr)
+      elif sys.argv[1]=='priv' and len(sys.argv)>3:
+         nxtarg=4
+         kr = crypto.base58toint(sys.argv[2])
+         cr = crypto.base58toint(sys.argv[3])
+         Kr = crypto.point(kr)
+      elif sys.argv[1]=='pub' and len(sys.argv)>4:
+         nxtarg=5
+         Kr = (crypto.base58toint(sys.argv[2]),crypto.base58toint(sys.argv[3]))
+         cr = crypto.base58toint(sys.argv[4])
+      if len(sys.argv)==nxtarg: # if no specific path/command was given, then just give the root info. This makes sense especially for "master"
+         crypto.print_node_info(kr,Kr,cr)
+      elif sys.argv[nxtarg]=="nostruct": # ignore ppath structure and use the current extended key directly
+         clear_ppaths()
+         nxtarg=nxtarg+1
+         handle_command(sys.argv[nxtarg],nxtarg+1,kr,Kr,cr)
+      elif commandp(sys.argv[nxtarg]): # a command was given with no path, assume the path is empty and use the root node
+         handle_command(sys.argv[nxtarg],nxtarg+1,kr,Kr,cr)
+      else: # assume the next argument is a path
+         kp = None
+         Kp = None
+         cp = None
+         if kr != None:
+            (kp,cp) = crypto.ckdprivpath(kr,cr,crypto.parsepath(sys.argv[nxtarg]))
+            Kp=crypto.point(kp)
+         else:
+            (Kp,cp) = crypto.ckdpubpath(Kr,cr,crypto.parsepath(sys.argv[nxtarg]))
+         nxtarg=nxtarg+1
+         if len(sys.argv)>nxtarg:
+            if commandp(sys.argv[nxtarg]):
+               handle_command(sys.argv[nxtarg],nxtarg+1,kp,Kp,cp)
+            else:
+               print "Unknown command: "+sys.argv[nxtarg]
+         else: # if a path was given, but no command, then give the info for this node on the path.
+            crypto.print_node_info(kp,Kp,cp)
+
+try:
+   main()
+except ValueError as e:
+   print "Error: ",e
+   sys.exit(1)
+except:
+   print "Error: ",sys.exc_info()[0]
+   sys.exit(2)

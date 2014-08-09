@@ -1,0 +1,66 @@
+#!/usr/bin/python
+import sys
+import time
+import crypto
+import config
+import identity
+
+def generatepreview(b,d,k,c,idpathname):
+   if d > 0:
+      j = 1
+      for i in range(b):
+         (kj,cj) = crypto.ckdpriv(k,c,crypto.harden(j)) # SUPERID node
+         (kji,cji) = crypto.ckdpriv(kj,cj,crypto.harden(0)) # ID node
+         gid=None
+         if idpathname==None:
+            gid=str(j)
+         else:
+            gid=idpathname+"."+str(j)
+         print "** Identity "+gid
+         (kid,cid) = crypto.ckdpriv(kji,cji,crypto.harden(0)) # Used for id info
+         identity.reportidentity(kid,cid)
+         (kcold,ccold) = crypto.ckdpriv(kji,cji,crypto.harden(1)) # Cold DIR node
+         Kcold = crypto.point(kcold)
+         print "Cold:"
+         crypto.print_node_info(kcold,Kcold,ccold)
+         (kwarm,cwarm) = crypto.ckdpriv(kji,cji,crypto.harden(2)) # Warm DIR node
+         Kwarm = crypto.point(kwarm)
+         print "Warm:"
+         crypto.print_node_info(kwarm,Kwarm,cwarm)
+         (khot,chot) = crypto.ckdpriv(kji,cji,crypto.harden(3)) # Hot DIR node
+         Khot = crypto.point(khot)
+         print "Hot:"
+         crypto.print_node_info(khot,Khot,chot)
+         generatepreview(b,d-1,kj,cj,gid)
+         j=j+1
+
+def command_range(nxtarg,def1=0,def2=10):
+   if len(sys.argv) > nxtarg:
+      j = int(sys.argv[nxtarg])
+      if len(sys.argv) > nxtarg+1:
+         l = int(sys.argv[nxtarg+1])
+         return (j,l)
+      else:
+         return (j,def2)
+   else:
+      return (def1,def2)
+
+# main
+def main():
+   if len(sys.argv)<2:
+      print "Usage: previewids <MasterSecretString> [breadth [depth]]"
+   else:
+      (krs,crs) = crypto.master(sys.argv[1])
+      kr = crypto.parse256(krs)
+      cr = crypto.parse256(crs)
+      (b,d) = command_range(2,2,2)
+      generatepreview(b,d,kr,cr,None)
+
+try:
+   main()
+except ValueError as e:
+   print "Error: ",e
+   sys.exit(1)
+except:
+   print "Error: ",sys.exc_info()[0]
+   sys.exit(2)
