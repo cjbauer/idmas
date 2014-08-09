@@ -276,12 +276,13 @@ previewids - This is more or less a subset of generateids that does
 generateids - This will probably be called once before you start
   seriously using idmas. You can use it with your master seed to
   create a tree of identities along with corresponding gpg encrypted
-  hot and warm identities.
+  hot and warm directories.
 
 * Authors
 
-The code was written by Christian Bauer. Christian's PGP public key
-should be included in the file cjbauer.asc.
+The code was written by Christian Bauer (based on other BIP0032
+descriptions/implementations publicly available). Christian's PGP
+public key should be included in the file cjbauer.asc.
 
 This README text was largely written by Westin in collaboration with
 Christian.
