@@ -31,7 +31,7 @@ contract can be published to everyone.
 
 On January 01, 2015, there are the following possibilities.
 
-1. Alice and Bob agree that Alice has paid Bob 1 bitcoin.
+Case 1. Alice and Bob agree that Alice has paid Bob 1 bitcoin.
 In this case, nothing more needs to happen. Third parties
 can see that the contract expired and no conflict arose.
 
@@ -52,7 +52,7 @@ In general, Alice can only sign and publish propositions of the form:
 Later if Carol wants to know if Alice is trustworthy, these published
 propositions can be used as evidence.
 
-2. Suppose Alice has not paid Bob the 1 bitcoin. Here is what could happen:
+Case 2. Suppose Alice has not paid Bob the 1 bitcoin. Here is what could happen:
 
 Bob could sign and publish
 
@@ -70,7 +70,7 @@ Alice could sign and publish a claim that she has paid Bob, but this
 would probably mean little since she cannot provide a tx id from addresses
 provably Alices and to addresses provably Bob's.
 
-3. Suppose Alice paid Bob the 1 bitcoin, but Bob accuses her of not having paid.
+Case 3. Suppose Alice paid Bob the 1 bitcoin, but Bob accuses her of not having paid.
 
 As in the previous case, Bob could sign and publish
 
@@ -114,7 +114,7 @@ Alice and Bob can sign a hash of C and this signed hash can be published.
 
 We again consider possibilities on January 01, 2015.
 
-1. Alice and Bob agree that Alice has paid Bob 1 bitcoin.
+Case 1. Alice and Bob agree that Alice has paid Bob 1 bitcoin.
 Alice and Bob might explicitly publish that each believes
 the contract expired with no dispute, without giving details of
 the contract.
@@ -132,12 +132,12 @@ The fact that Bob is correct is easily checkable by examining the terms
 of C. Consequently, Carol could conclude that while Alice may be trusted
 to pay her debts, she cannot be trusted to keep information private.
 
-2. Suppose Alice has not paid Bob the 1 bitcoin. There is a dispute which should
+Case 2. Suppose Alice has not paid Bob the 1 bitcoin. There is a dispute which should
 supersede the fact that the contract should remain closed. In this case,
 Bob is allowed to openly sign and publish an accusation that Alice did not pay.
 Since Alice did not pay, she cannot refute this accusation.
 
-3. Suppose Alice paid Bob the 1 bitcoin, but Bob accuses her of not having paid.
+Case 3. Suppose Alice paid Bob the 1 bitcoin, but Bob accuses her of not having paid.
 This proceeds as in the previous example. However, in this case it may permanently
 damage Bob's reputation if he opens C (breaching C) when Alice has actually paid Bob.
 Bob can avoid this damage by first signing and publishing:
@@ -198,7 +198,7 @@ then Carol could use this failure as evidence to distrust Alice or Bob.
 
 Here there are several possibilities.
 
-1. If one of Alice or Bob believes P1 and the other believes not P1,
+Case 1. If one of Alice or Bob believes P1 and the other believes not P1,
 then there is a dispute. Carol can decide whether she believes P1 or
 not P1 and use this to determine which of Alice or Bob she must
 distrust.  Carol can probably reasonably determine whether or not P1
@@ -208,19 +208,19 @@ if the price is close to 500 Euros on January 01, 2015). If Carol does
 not make this determination about P1, then she is still later allowed
 to trust Alice or trust Bob, just not both at the same time.
 
-2. Alice and Bob agree that not P1. In this case, the contract
+Case 2. Alice and Bob agree that not P1. In this case, the contract
 terminates and there is no dispute.
 
 In the remaining cases Alice and Bob agree P1 and we must consider P2.
 On January 09, 2015, both Alice and Bob should publish whether or not they
 believe P2.
 
-3. Suppose Alice and Bob disagree about P2. (This almost certainly means
+Case 3. Suppose Alice and Bob disagree about P2. (This almost certainly means
 Bob says he paid and Alice says he didn't.) Here Carol would have little
 evidence as to whether or not such a fiat transaction took place.
 All Carol could realistically know is that one of Alice or Bob is untrustworthy.
 
-4. Suppose Alice and Bob agree on not P2: Bob did not pay.
+Case 4. Suppose Alice and Bob agree on not P2: Bob did not pay.
 Here the contract terminates and there is no dispute.
 
 In the remaining cases Alice and Bob agree on P2 and we must consider P3.
