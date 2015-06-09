@@ -1,0 +1,4 @@
+#!/bin/bash
+cd $1
+tar czvf $2.tgz $2
+echo $3 | gpg --passphrase-fd 0 -c $2.tgz
