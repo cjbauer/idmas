@@ -75,7 +75,10 @@ def handle_command(com,nxtarg,k,K,c):
       else:
          (j,l) = command_range(nxtarg)
          (k,K,c) = crypto.postpath(btc_ppath,k,K,c)
-         coin_addresses(j,l,crypto.btcwif,crypto.btcaddr,k,K,c)
+         if c%25==0:
+            coin_addresses(j,l,crypto.btcwif,crypto.btcaddr,k,K,c)
+         else:
+            coin_addresses(j,l,crypto.btcwifc,crypto.btcaddrc,k,K,c)
    elif com=="ltc":
       if len(sys.argv) == nxtarg:
          (k,K,c) = crypto.postpath(ltc_ppath,k,K,c)

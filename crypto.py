@@ -128,8 +128,23 @@ def wif(priv,prefix):
     s3=h.digest()
     return inttobase58(parse256(s1+s3[0:4]))
 
+def wifc(priv,prefix):
+    s1 = ""
+    for i in range(32):
+        s1 = chr(priv%256)+s1
+        priv=priv>>8
+    s1=prefix+s1+chr(1)
+    h=hashlib.sha256(s1)
+    s2=h.digest()
+    h=hashlib.sha256(s2)
+    s3=h.digest()
+    return inttobase58(parse256(s1+s3[0:4]))
+
 def btcwif(priv):
     return wif(priv,'\x80')
+
+def btcwifc(priv):
+    return wifc(priv,'\x80')
 
 def ltcwif(priv):
     return wif(priv,'\xb0')
@@ -149,6 +164,26 @@ def btcaddr(P):
     else:
         (xP,yP) = P
         epub='\x04'+ser256(xP)+ser256(yP)
+        h=hashlib.sha256(epub)
+        s1=h.digest()
+        h=hashlib.new('ripemd160')
+        h.update(s1)
+        s2=h.digest()
+        h=hashlib.sha256('\x00'+s2)
+        s3=h.digest()
+        h=hashlib.sha256(s3)
+        s4=h.digest()
+        return '1'*(1+numnullchars(s2))+inttobase58(parse256(s2+s4[0:4]))
+
+def btcaddrc(P):
+    if P == None:
+        raise ValueError("Nullpunkt not public key")
+    else:
+        (xP,yP) = P
+        if (yP%2==0):
+            epub='\x02'+ser256(xP)
+        else:
+            epub='\x03'+ser256(xP)
         h=hashlib.sha256(epub)
         s1=h.digest()
         h=hashlib.new('ripemd160')
