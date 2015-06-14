@@ -46,7 +46,6 @@ def addP(P,Q):
           (xQ,yQ)=Q
           if xP==xQ:
               if amp(yP,yQ)==0:
-                  print "sigh"
                   return None
               else:
                   s=mmp(imp(mmp(2,yP)),mmp(3,(mmp(xP,xP))))
@@ -149,7 +148,7 @@ def btcwifc(priv):
 def ltcwif(priv):
     return wif(priv,'\xb0')
 
-def drkwif(priv):
+def dashwif(priv):
     return wif(priv,'\xcc')
 
 def numnullchars(x):
@@ -215,7 +214,7 @@ def addr(P,prefix):
 def ltcaddr(P):
     return addr(P,'\x30')
 
-def drkaddr(P):
+def dashaddr(P):
     return addr(P,'\x4c')
 
 # BIP0032

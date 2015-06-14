@@ -13,15 +13,15 @@ import identity
 passwords_ppath = crypto.parsepath("0'")
 btc_ppath = crypto.parsepath("0/0/0")
 ltc_ppath = crypto.parsepath("0/1/0")
-drk_ppath = crypto.parsepath("0/2/0")
+dash_ppath = crypto.parsepath("0/2/0")
 
 # nostruct is an indication not to use ppaths above
 def clear_ppaths():
-   global passwords_ppath, btc_ppath, ltc_ppath, drk_ppath
+   global passwords_ppath, btc_ppath, ltc_ppath, dash_ppath
    passwords_ppath = []
    btc_ppath = []
    ltc_ppath = []
-   drk_ppath = []
+   dash_ppath = []
 
 def print_help():
    print "Basic Usage:"
@@ -38,7 +38,7 @@ def print_help():
    print 'Commands are:'
    print 'btc -- print the extended private and/or addresses for the bitcoin node of the directory (or node itself if nostruct)'
    print 'ltc -- print the extended private and/or addresses for the litecoin node of the directory (or node itself if nostruct)'
-   print 'drk -- print the extended private and/or addresses for the darkcoin node of the directory (or node itself if nostruct)'
+   print 'dash -- print the extended private and/or addresses for the dash (previously darkcoin) node of the directory (or node itself if nostruct)'
    print 'passwords [StartIndex [NumberToGenerate]] -- generate passwords by taking 96 bits from the private keys and giving them in base58'
    print 'identity -- give name, age, and so on for the identity at this node'
 
@@ -87,14 +87,14 @@ def handle_command(com,nxtarg,k,K,c):
          (j,l) = command_range(nxtarg)
          (k,K,c) = crypto.postpath(ltc_ppath,k,K,c)
          coin_addresses(j,l,crypto.ltcwif,crypto.ltcaddr,k,K,c)
-   elif com=="drk":
+   elif com=="dash":
       if len(sys.argv) == nxtarg:
-         (k,K,c) = crypto.postpath(drk_ppath,k,K,c)
+         (k,K,c) = crypto.postpath(dash_ppath,k,K,c)
          crypto.print_node_info(k,K,c)
       else:
          (j,l) = command_range(nxtarg)
-         (k,K,c) = crypto.postpath(drk_ppath,k,K,c)
-         coin_addresses(j,l,crypto.drkwif,crypto.drkaddr,k,K,c)
+         (k,K,c) = crypto.postpath(dash_ppath,k,K,c)
+         coin_addresses(j,l,crypto.dashwif,crypto.dashaddr,k,K,c)
    elif com=="passwords":
       if k == None:
          raise ValueError("passwords can only be created with the extended private key")
@@ -134,7 +134,7 @@ def handle_command(com,nxtarg,k,K,c):
       print "Unknown command "+com
 
 def commandp(x):
-   return (x=="btc" or x=="ltc" or x=="drk" or x=="passwords" or x=="identity")
+   return (x=="btc" or x=="ltc" or x=="dash" or x=="passwords" or x=="identity")
 
 # main
 def main():
