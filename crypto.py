@@ -151,6 +151,18 @@ def ltcwif(priv):
 def dashwif(priv):
     return wif(priv,'\xcc')
 
+def clamwif(priv):
+    return wif(priv,'\x85')
+
+def clamwifc(priv):
+    return wifc(priv,'\x85')
+
+def nbtwif(priv):
+    return wif(priv,'\xbf')
+
+def nbtwifc(priv):
+    return wifc(priv,'\xbf')
+
 def numnullchars(x):
     i=0
     while i<len(x) and x[i]=='\x00':
@@ -211,11 +223,49 @@ def addr(P,prefix):
         s4=h.digest()
         return inttobase58(parse256(s2+s4[0:4]))
 
+def addrc(P,prefix):
+    if P == None:
+        raise ValueError("Nullpunkt not public key")
+    else:
+        (xP,yP) = P
+        if (yP%2==0):
+          epub='\x02'+ser256(xP)
+        else:
+            epub='\x03'+ser256(xP)
+        h=hashlib.sha256(epub)
+        s1=h.digest()
+        h=hashlib.new('ripemd160')
+        h.update(s1)
+        s2=prefix+h.digest()
+        h=hashlib.sha256(s2)
+        s3=h.digest()
+        h=hashlib.sha256(s3)
+        s4=h.digest()
+        return inttobase58(parse256(s2+s4[0:4]))
+
 def ltcaddr(P):
     return addr(P,'\x30')
 
 def dashaddr(P):
     return addr(P,'\x4c')
+
+def clamaddr(P):
+    return addr(P,'\x89')
+
+def nbtaddr(P):
+    return addr(P,'\x19')
+
+def ltcaddrc(P):
+    return addrc(P,'\x30')
+
+def dashaddrc(P):
+    return addrc(P,'\x4c')
+
+def clamaddrc(P):
+    return addrc(P,'\x89')
+
+def nbtaddrc(P):
+    return addrc(P,'\x19')
 
 # BIP0032
 def serP(P):

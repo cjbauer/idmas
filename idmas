@@ -14,6 +14,8 @@ passwords_ppath = crypto.parsepath("0'")
 btc_ppath = crypto.parsepath("0/0/0")
 ltc_ppath = crypto.parsepath("0/1/0")
 dash_ppath = crypto.parsepath("0/2/0")
+clam_ppath = crypto.parsepath("0/3/0")
+nbt_ppath = crypto.parsepath("0/4/0")
 
 # nostruct is an indication not to use ppaths above
 def clear_ppaths():
@@ -22,6 +24,8 @@ def clear_ppaths():
    btc_ppath = []
    ltc_ppath = []
    dash_ppath = []
+   clam_ppath = []
+   nbt_ppath = []
 
 def print_help():
    print "Basic Usage:"
@@ -39,6 +43,8 @@ def print_help():
    print 'btc -- print the extended private and/or addresses for the bitcoin node of the directory (or node itself if nostruct)'
    print 'ltc -- print the extended private and/or addresses for the litecoin node of the directory (or node itself if nostruct)'
    print 'dash -- print the extended private and/or addresses for the dash (previously darkcoin) node of the directory (or node itself if nostruct)'
+   print 'clam -- print the extended private and/or addresses for the clam node of the directory (or node itself if nostruct)'
+   print 'nbt -- print the extended private and/or addresses for the nubits node of the directory (or node itself if nostruct)'
    print 'passwords [StartIndex [NumberToGenerate]] -- generate passwords by taking 96 bits from the private keys and giving them in base58'
    print 'identity -- give name, age, and so on for the identity at this node'
 
@@ -95,6 +101,28 @@ def handle_command(com,nxtarg,k,K,c):
          (j,l) = command_range(nxtarg)
          (k,K,c) = crypto.postpath(dash_ppath,k,K,c)
          coin_addresses(j,l,crypto.dashwif,crypto.dashaddr,k,K,c)
+   elif com=="clam":
+      if len(sys.argv) == nxtarg:
+         (k,K,c) = crypto.postpath(clam_ppath,k,K,c)
+         crypto.print_node_info(k,K,c)
+      else:
+         (j,l) = command_range(nxtarg)
+         (k,K,c) = crypto.postpath(clam_ppath,k,K,c)
+         if c%25==19:
+            coin_addresses(j,l,crypto.clamwif,crypto.clamaddr,k,K,c)
+         else:
+            coin_addresses(j,l,crypto.clamwifc,crypto.clamaddrc,k,K,c)
+   elif com=="nbt":
+      if len(sys.argv) == nxtarg:
+         (k,K,c) = crypto.postpath(nbt_ppath,k,K,c)
+         crypto.print_node_info(k,K,c)
+      else:
+         (j,l) = command_range(nxtarg)
+         (k,K,c) = crypto.postpath(nbt_ppath,k,K,c)
+         if c%25==0:
+            coin_addresses(j,l,crypto.nbtwif,crypto.nbtaddr,k,K,c)
+         else:
+            coin_addresses(j,l,crypto.nbtwifc,crypto.nbtaddrc,k,K,c)
    elif com=="passwords":
       if k == None:
          raise ValueError("passwords can only be created with the extended private key")
@@ -134,7 +162,7 @@ def handle_command(com,nxtarg,k,K,c):
       print "Unknown command "+com
 
 def commandp(x):
-   return (x=="btc" or x=="ltc" or x=="dash" or x=="passwords" or x=="identity")
+   return (x=="btc" or x=="ltc" or x=="dash" or x=="clam" or x=="nbt" or x=="passwords" or x=="identity")
 
 # main
 def main():
