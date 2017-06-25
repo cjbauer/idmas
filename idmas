@@ -19,7 +19,7 @@ nbt_ppath = crypto.parsepath("0/4/0")
 
 # nostruct is an indication not to use ppaths above
 def clear_ppaths():
-   global passwords_ppath, btc_ppath, ltc_ppath, dash_ppath
+   global passwords_ppath, btc_ppath, ltc_ppath, dash_ppath, clam_ppath, nbt_ppath
    passwords_ppath = []
    btc_ppath = []
    ltc_ppath = []
@@ -92,7 +92,10 @@ def handle_command(com,nxtarg,k,K,c):
       else:
          (j,l) = command_range(nxtarg)
          (k,K,c) = crypto.postpath(ltc_ppath,k,K,c)
+         print 'Uncompressed:'
          coin_addresses(j,l,crypto.ltcwif,crypto.ltcaddr,k,K,c)
+         print 'Compressed:'
+         coin_addresses(j,l,crypto.ltcwifc,crypto.ltcaddrc,k,K,c)
    elif com=="dash":
       if len(sys.argv) == nxtarg:
          (k,K,c) = crypto.postpath(dash_ppath,k,K,c)

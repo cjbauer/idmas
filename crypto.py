@@ -148,6 +148,9 @@ def btcwifc(priv):
 def ltcwif(priv):
     return wif(priv,'\xb0')
 
+def ltcwifc(priv):
+    return wifc(priv,'\xb0')
+
 def dashwif(priv):
     return wif(priv,'\xcc')
 
@@ -229,7 +232,7 @@ def addrc(P,prefix):
     else:
         (xP,yP) = P
         if (yP%2==0):
-          epub='\x02'+ser256(xP)
+            epub='\x02'+ser256(xP)
         else:
             epub='\x03'+ser256(xP)
         h=hashlib.sha256(epub)
@@ -245,6 +248,9 @@ def addrc(P,prefix):
 
 def ltcaddr(P):
     return addr(P,'\x30')
+
+def ltcaddrc(P):
+    return addrc(P,'\x30')
 
 def dashaddr(P):
     return addr(P,'\x4c')
